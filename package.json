@@ -1,0 +1,76 @@
+{
+  "name": "deepseek-js",
+  "version": "1.0.0",
+  "description": "Reusable DeepSeek-R1 on Azure starter",
+  "private": true,
+  "scripts": {
+    "start": "npm run start --workspace=@azure/ai-chat-components",
+    "start:webapp": "npm run dev --workspace=webapp-html",
+    "start:api": "npm run start --workspace=api",
+    "build": "npm run build -ws --if-present",
+    "build:wc": "npm run build --workspace=@azure/ai-chat-components",
+    "clean": "npm run clean -ws --if-present",
+    "lint": "xo packages/api",
+    "lint:fix": "xo packages/api --fix",
+    "format": "prettier --list-different --write .",
+    "format:check": "prettier --list-different ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Azure-Samples/deepseek-js.git"
+  },
+  "homepage": "https://github.com/Azure-Samples/deepseek-js",
+  "bugs": {
+    "url": "https://github.com/Azure-Samples/deepseek-js/issues"
+  },
+  "keywords": [
+    "azure",
+    "azure-functions",
+    "azure-static-web-apps",
+    "chatbot",
+    "serverless",
+    "typescript",
+    "secure",
+    "web-components",
+    "deepseek",
+    "ui"
+  ],
+  "author": "Microsoft",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
+  "devDependencies": {
+    "@azure/static-web-apps-cli": "^2.0.1",
+    "concurrently": "^9.0.1",
+    "prettier": "^3.0.3",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.3.3",
+    "xo": "^0.60.0"
+  },
+  "engines": {
+    "node": ">=20",
+    "npm": ">=10"
+  },
+  "prettier": {
+    "tabWidth": 2,
+    "semi": true,
+    "singleQuote": true,
+    "printWidth": 120,
+    "bracketSpacing": true
+  },
+  "xo": {
+    "space": true,
+    "prettier": true,
+    "envs": [
+      "node"
+    ],
+    "rules": {
+      "@typescript-eslint/triple-slash-reference": "off",
+      "@typescript-eslint/naming-convention": "off",
+      "@typescript-eslint/prefer-nullish-coalescing": "off",
+      "@typescript-eslint/consistent-type-assertions": "off",
+      "import/no-unassigned-import": "off"
+    }
+  }
+}

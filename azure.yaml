@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: deepseek-js
+metadata:
+  template: deepseek-js
+
+services:
+  webapp:
+    project: ./packages/webapp-html
+    dist: dist
+    language: ts
+    host: staticwebapp
+
+  api:
+    project: ./packages/api
+    language: ts
+    host: function
+
+hooks:
+  prepackage:
+    windows:
+      shell: pwsh
+      run: npm ci && npm run build:wc
+    posix:
+      shell: sh
+      run: npm ci && npm run build:wc
+  postprovision:
+    windows:
+      shell: pwsh
+      run: azd env get-values > packages/api/.env
+    posix:
+      shell: sh
+      run: azd env get-values > packages/api/.env
