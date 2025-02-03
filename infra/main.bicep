@@ -51,7 +51,6 @@ param apiServiceName string = 'api'
 param aiServicesLocation string // Set in main.parameters.json
 param openAiApiVersion string // Set in main.parameters.json
 param modelName string = 'DeepSeek-R1'
-param modelCapacity int = 1
 
 // Location is not relevant here as it's only for the built-in api
 // which is not used here. Static Web App is a global service otherwise
@@ -90,116 +89,150 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   tags: tags
 }
 
-// The application webapp
-module webapp './core/host/staticwebapp.bicep' = {
+module webapp 'br/public:avm/res/web/static-site:0.7.0' = {
   name: 'webapp'
   scope: resourceGroup
   params: {
-    name: !empty(webappName) ? webappName : '${abbrs.webStaticSites}web-${resourceToken}'
+    name: webappName
     location: webappLocation
     tags: union(tags, { 'azd-service-name': webappName })
-    sku: {
-      name: 'Standard'
-      tier: 'Standard'
+    sku: 'Standard'
+    linkedBackend: {
+      resourceId: function.outputs.resourceId
+      region: location
     }
   }
 }
 
-// The application backend API
-module api './app/api.bicep' = {
+module function 'br/public:avm/res/web/site:0.13.0' = {
   name: 'api'
   scope: resourceGroup
   params: {
-    name: apiResourceName
-    location: location
     tags: union(tags, { 'azd-service-name': apiServiceName })
-    appServicePlanId: appServicePlan.outputs.id
-    allowedOrigins: [webapp.outputs.uri]
-    storageAccountName: storage.outputs.name
-    applicationInsightsName: monitoring.outputs.applicationInsightsName
-    virtualNetworkSubnetId: vnet.outputs.appSubnetID
-    staticWebAppName: webapp.outputs.name
-    appSettings: {
-      APPINSIGHTS_INSTRUMENTATIONKEY: monitoring.outputs.applicationInsightsInstrumentationKey
-      AZURE_OPENAI_API_INSTANCE_NAME: aiServices.outputs.name
-      AZURE_OPENAI_API_ENDPOINT: aiServicesUrl
+    location: location
+    kind: 'functionapp,linux'
+    name: apiResourceName
+    serverFarmResourceId: appServicePlan.outputs.resourceId
+    appInsightResourceId: monitoring.outputs.applicationInsightsResourceId
+    managedIdentities: { systemAssigned: true }
+    appSettingsKeyValuePairs: {
+      AZURE_AI_ENDPOINT: aiServicesUrl
+      AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: modelName
+      AZURE_OPENAI_INSTANCE_NAME: aiServices.outputs.name
       AZURE_OPENAI_API_VERSION: openAiApiVersion
-      AZURE_OPENAI_API_DEPLOYMENT_NAME: modelName
-      OPENAI_MODEL_NAME: modelName
     }
+    siteConfig: {
+      minTlsVersion: '1.2'
+      ftpsState: 'FtpsOnly'
+    }
+    functionAppConfig: {
+      deployment: {
+        storage: {
+          type: 'blobContainer'
+          value: '${storage.outputs.primaryBlobEndpoint}${apiResourceName}'
+          authentication: {
+            type: 'SystemAssignedIdentity'
+          }
+        }
+      }
+      scaleAndConcurrency: {
+        maximumInstanceCount: 800
+        instanceMemoryMB: 2048
+      }
+      runtime: {
+        name: 'node'
+        version: '20'
+      }
+    }
+    storageAccountResourceId: storage.outputs.resourceId
+    storageAccountUseIdentityAuthentication: true
+    virtualNetworkSubnetId: vnet.outputs.subnetResourceIds[0]
   }
 }
 
-// Compute plan for the Azure Functions API
-module appServicePlan './core/host/appserviceplan.bicep' = {
+module appServicePlan 'br/public:avm/res/web/serverfarm:0.4.1' = {
   name: 'appserviceplan'
   scope: resourceGroup
   params: {
-    name: !empty(appServicePlanName) ? appServicePlanName : '${abbrs.webServerFarms}${resourceToken}'
-    location: location
+    name: '${abbrs.webServerFarms}${resourceToken}'
     tags: tags
-    sku: {
-      name: 'FC1'
-      tier: 'FlexConsumption'
-    }
+    location: location
+    skuName: 'FC1'
     reserved: true
   }
 }
 
-// Storage for Azure Functions API and Blob storage
-module storage './core/storage/storage-account.bicep' = {
+module storage 'br/public:avm/res/storage/storage-account:0.15.0' = {
   name: 'storage'
   scope: resourceGroup
   params: {
-    name: !empty(storageAccountName) ? storageAccountName : '${abbrs.storageStorageAccounts}${resourceToken}'
-    location: location
+    name: storageAccountName
     tags: tags
-    allowBlobPublicAccess: false
+    location: location
+    skuName: 'Standard_LRS'
     allowSharedKeyAccess: false
-    containers: [
-      // Deployment storage container
-      {
-        name: apiResourceName
-      }
-    ]
+    // publicNetworkAccess: 'Enabled'
     networkAcls: {
       defaultAction: 'Deny'
       bypass: 'AzureServices'
       virtualNetworkRules: [
         {
-          id: vnet.outputs.appSubnetID
+          id: vnet.outputs.subnetResourceIds[0]
           action: 'Allow'
         }
       ]
     }
+    blobServices: {
+      containers: [
+        {
+          name: apiResourceName
+        }
+      ]
+    }
+    roleAssignments: [
+      {
+        principalId: principalId
+        principalType: principalType
+        roleDefinitionIdOrName: 'Storage Blob Data Contributor'
+      }
+    ]
   }
 }
 
-// Virtual network for Azure Functions API
-module vnet './app/vnet.bicep' = {
+module monitoring 'br/public:avm/ptn/azd/monitoring:0.1.1' = {
+  name: 'monitoring'
+  scope: resourceGroup
+  params: {
+    tags: tags
+    location: location
+    applicationInsightsName: '${abbrs.insightsComponents}${resourceToken}'
+    applicationInsightsDashboardName: '${abbrs.portalDashboards}${resourceToken}'
+    logAnalyticsName: '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
+  }
+}
+
+module vnet 'br/public:avm/res/network/virtual-network:0.5.2' = {
   name: 'vnet'
   scope: resourceGroup
   params: {
     name: '${abbrs.networkVirtualNetworks}${resourceToken}'
     location: location
     tags: tags
+    addressPrefixes: ['10.0.0.0/16']
+    subnets: [
+      {
+        name: 'app'
+        addressPrefix: '10.0.1.0/24'
+        delegation: 'Microsoft.App/environments'
+        serviceEndpoints: ['Microsoft.Storage']
+        privateEndpointNetworkPolicies: 'Disabled'
+        privateLinkServiceNetworkPolicies: 'Enabled'
+      }
+    ]
   }
 }
 
-// Monitor application with Azure Monitor
-module monitoring './core/monitor/monitoring.bicep' = {
-  name: 'monitoring'
-  scope: resourceGroup
-  params: {
-    location: location
-    tags: tags
-    logAnalyticsName: '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
-    applicationInsightsName: '${abbrs.insightsComponents}${resourceToken}'
-    applicationInsightsDashboardName: '${abbrs.portalDashboards}${resourceToken}'
-  }
-}
-
-module aiServices 'br/public:avm/res/cognitive-services/account:0.7.2' = {
+module aiServices 'br/public:avm/res/cognitive-services/account:0.9.2' = {
   name: 'aiServices'
   scope: resourceGroup
   params: {
@@ -210,65 +243,52 @@ module aiServices 'br/public:avm/res/cognitive-services/account:0.7.2' = {
     customSubDomainName: '${abbrs.cognitiveServicesAccounts}${resourceToken}'
     sku: 'S0'
     deployments: [
-      // {
-      //   name: modelName
-      //   model: {
-      //     format: 'DeepSeek'
-      //     name: modelName
-      //     version: '1'
-      //   }
-      //   sku: {
-      //     name: 'GlobalStandard'
-      //     capacity: modelCapacity
-      //   }
-      // }
+      {
+        name: modelName
+        model: {
+          format: 'DeepSeek'
+          name: modelName
+          version: '1'
+        }
+        sku: {
+          name: 'GlobalStandard'
+          capacity: 1
+        }
+      }
     ]
     disableLocalAuth: true
     roleAssignments: [
       {
         principalId: principalId
-        principalType: 'User'
+        principalType: principalType
         roleDefinitionIdOrName: 'Cognitive Services OpenAI User'
       }
     ]
   }
 }
 
-// Managed identity roles assignation
 // ---------------------------------------------------------------------------
+// System roles assignation
 
-// User roles
-module storageRoleUser 'core/security/role.bicep' = if (!isContinuousDeployment) {
+module aiServicesRoleApi 'br/public:avm/ptn/authorization/resource-role-assignment:0.1.2' = {
   scope: resourceGroup
-  name: 'storage-contrib-role-user'
+  name: 'aiservices-role-api'
   params: {
-    principalId: principalId
-    // Storage Blob Data Contributor
-    roleDefinitionId: 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
-    principalType: 'User'
-  }
-}
-
-// System roles
-module openAiRoleApi 'core/security/role.bicep' = {
-  scope: resourceGroup
-  name: 'openai-role-api'
-  params: {
-    principalId: api.outputs.identityPrincipalId
-    // Cognitive Services OpenAI User
+    principalId: function.outputs.systemAssignedMIPrincipalId
+    roleName: 'Cognitive Services OpenAI User'
     roleDefinitionId: '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd'
-    principalType: 'ServicePrincipal'
+    resourceId: aiServices.outputs.resourceId
   }
 }
 
-module storageRoleApi 'core/security/role.bicep' = {
+module storageRoleApi 'br/public:avm/ptn/authorization/resource-role-assignment:0.1.2' = {
   scope: resourceGroup
   name: 'storage-role-api'
   params: {
-    principalId: api.outputs.identityPrincipalId
-    // Storage Blob Data Contributor
-    roleDefinitionId: 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
-    principalType: 'ServicePrincipal'
+    principalId: function.outputs.systemAssignedMIPrincipalId
+    roleName: 'Storage Blob Data Contributor'
+    roleDefinitionId: 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b'
+    resourceId: storage.outputs.resourceId
   }
 }
 
@@ -276,10 +296,11 @@ output AZURE_LOCATION string = location
 output AZURE_TENANT_ID string = tenant().tenantId
 output AZURE_RESOURCE_GROUP string = resourceGroup.name
 
-output AZURE_OPENAI_ENDPOINT string = aiServicesUrl
+output AZURE_AI_ENDPOINT string = aiServicesUrl
+output AZURE_AI_DEPLOYMENT_NAME string = modelName
+
 output AZURE_OPENAI_API_INSTANCE_ string = aiServices.outputs.name
-output AZURE_OPENAI_API_DEPLOYMENT_NAME string = modelName
-output OPENAI_API_VERSION string = ''
+output OPENAI_API_VERSION string = openAiApiVersion
 output OPENAI_MODEL_NAME string = modelName
 
-output WEBAPP_URL string = webapp.outputs.uri
+output WEBAPP_URL string = webapp.outputs.defaultHostname
