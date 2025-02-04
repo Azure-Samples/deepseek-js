@@ -1,6 +1,6 @@
 import process from 'node:process';
 import { Readable } from 'node:stream';
-import { IncomingMessage } from 'node:http';
+import { type IncomingMessage } from 'node:http';
 import { DefaultAzureCredential } from '@azure/identity';
 import { type HttpRequest, type InvocationContext, type HttpResponseInit, app } from '@azure/functions';
 import {
@@ -99,7 +99,7 @@ export async function postChat(
     });
 
     if (isUnexpected(response)) {
-      throw response.body.error;
+      throw new Error(response.body.error.message);
     }
 
     return {
@@ -134,7 +134,7 @@ async function* createJsonStream(stream: IncomingMessage) {
 
     const responseChunk: AIChatCompletionDelta = {
       delta: {
-        content: chunk.choices[0].delta.content,
+        content: chunk.choices[0].delta.content as string,
         role: 'assistant',
       },
     };
