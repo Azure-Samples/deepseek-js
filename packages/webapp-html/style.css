@@ -1,0 +1,42 @@
+:root {
+  --azc-primary: #0a9;
+  --azc-bg: #eee;
+  --azc-border-radius: 16px;
+}
+html,
+body {
+  font-size: 16px;
+  margin: 0;
+  background: var(--azc-bg);
+}
+nav {
+  background: #333;
+  color: #fff;
+  padding: 16px;
+  font-family:
+    'Segoe UI',
+    -apple-system,
+    BlinkMacSystemFont,
+    Roboto,
+    'Helvetica Neue',
+    sans-serif;
+  font-size: 1.25rem;
+}
+.container {
+  max-width: 1024px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+}
+.logo {
+  margin-right: 8px;
+}
+.spacer {
+  flex: 100 1 0;
+}
+azc-chat, azc-auth {
+  flex: auto;
+}
+azc-auth[type="status"] {
+  font-size: 16px;
+}
