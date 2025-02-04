@@ -49,7 +49,6 @@ param apiServiceName string = 'api'
   }
 })
 param aiServicesLocation string // Set in main.parameters.json
-param openAiApiVersion string // Set in main.parameters.json
 param modelName string = 'DeepSeek-R1'
 
 // Location is not relevant here as it's only for the built-in api
@@ -117,9 +116,7 @@ module function 'br/public:avm/res/web/site:0.13.0' = {
     managedIdentities: { systemAssigned: true }
     appSettingsKeyValuePairs: {
       AZURE_AI_ENDPOINT: aiServicesUrl
-      AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: modelName
-      AZURE_OPENAI_INSTANCE_NAME: aiServices.outputs.name
-      AZURE_OPENAI_API_VERSION: openAiApiVersion
+      AZURE_AI_DEPLOYMENT_NAME: modelName
     }
     siteConfig: {
       minTlsVersion: '1.2'
@@ -241,6 +238,7 @@ module aiServices 'br/public:avm/res/cognitive-services/account:0.9.2' = {
     tags: tags
     kind: 'AIServices'
     customSubDomainName: '${abbrs.cognitiveServicesAccounts}${resourceToken}'
+    publicNetworkAccess: 'Enabled'
     sku: 'S0'
     deployments: [
       {
@@ -298,9 +296,5 @@ output AZURE_RESOURCE_GROUP string = resourceGroup.name
 
 output AZURE_AI_ENDPOINT string = aiServicesUrl
 output AZURE_AI_DEPLOYMENT_NAME string = modelName
-
-output AZURE_OPENAI_API_INSTANCE_ string = aiServices.outputs.name
-output OPENAI_API_VERSION string = openAiApiVersion
-output OPENAI_MODEL_NAME string = modelName
 
 output WEBAPP_URL string = webapp.outputs.defaultHostname

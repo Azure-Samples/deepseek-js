@@ -17,9 +17,6 @@
     "aiServicesLocation": {
       "value": "${AZURE_AI_SERVICES_LOCATION=eastus2}"
     },
-    "openAiApiVersion": {
-      "value": "${AZURE_OPENAI_API_VERSION=2024-02-01}"
-    },
     "webappLocation": {
       "value": "${AZURE_WEBAPP_LOCATION=eastus2}"
     },
