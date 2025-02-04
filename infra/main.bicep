@@ -77,7 +77,7 @@ var tags = { 'azd-env-name': environmentName }
 var principalType = isContinuousIntegration ? 'ServicePrincipal' : 'User'
 var apiResourceName = '${abbrs.webSitesFunctions}api-${resourceToken}'
 var storageAccountName = '${abbrs.storageStorageAccounts}${resourceToken}'
-var aiServicesUrl = 'https://${aiServices.outputs.name}.openai.azure.com'
+var aiServicesUrl = 'https://${aiServices.outputs.name}.services.ai.azure.com/models'
 
 // ---------------------------------------------------------------------------
 // Resources
@@ -254,12 +254,12 @@ module aiServices 'br/public:avm/res/cognitive-services/account:0.9.2' = {
         }
       }
     ]
-    disableLocalAuth: true
+    disableLocalAuth: false
     roleAssignments: [
       {
         principalId: principalId
         principalType: principalType
-        roleDefinitionIdOrName: 'Cognitive Services OpenAI User'
+        roleDefinitionIdOrName: 'Cognitive Services User'
       }
     ]
   }
@@ -273,8 +273,8 @@ module aiServicesRoleApi 'br/public:avm/ptn/authorization/resource-role-assignme
   name: 'aiservices-role-api'
   params: {
     principalId: function.outputs.systemAssignedMIPrincipalId
-    roleName: 'Cognitive Services OpenAI User'
-    roleDefinitionId: '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd'
+    roleName: 'Cognitive Services User'
+    roleDefinitionId: 'a97b65f3-24c7-4388-baec-2e87135dc908'
     resourceId: aiServices.outputs.resourceId
   }
 }
