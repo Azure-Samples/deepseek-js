@@ -181,7 +181,7 @@ You can find answers to frequently asked questions in the [FAQ](./docs/faq.md).
 
 ### Region availability
 
-This template uses model `DeepSeek-R1` which may not be available in all Azure regions. Check for [up-to-date region availability](https://learn.microsoft.com/azure/ai-services/openai/concepts/models#standard-deployment-model-availability) and select a region during deployment accordingly.
+This template uses model `DeepSeek-R1` which may not be available in all Azure regions. Check for [up-to-date region availability](ttps://learn.microsoft.com/azure/ai-studio/how-to/deploy-models-serverless-availability) and select a region during deployment accordingly.
 
 We recommend using `East US 2` if you're unsure of which region to choose.
 
