@@ -46,21 +46,12 @@
     "ai",
     "llm"
   ],
-  "release": {
-    "extends": [
-      "semantic-release-npm-github"
-    ],
-    "tagFormat": "@azure/ai-chat-components-${version}",
-    "branches": "main"
-  },
   "dependencies": {
     "@microsoft/ai-chat-protocol": "^1.0.0-beta.20240814.1",
     "lit": "^3.0.0"
   },
   "devDependencies": {
     "lit-analyzer": "^2.0.1",
-    "semantic-release": "^24.1.0",
-    "semantic-release-npm-github": "^5.0.0",
     "typescript": "^5.7.3",
     "vite": "^6.0.3"
   },
