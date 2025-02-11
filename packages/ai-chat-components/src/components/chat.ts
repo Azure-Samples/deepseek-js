@@ -694,7 +694,8 @@ export class ChatComponent extends LitElement {
       display: inline-block;
       width: 54px;
       height: 8px;
-      background: radial-gradient(circle 4px at 4px center, var(--primary) 100%, transparent 0),
+      background:
+        radial-gradient(circle 4px at 4px center, var(--primary) 100%, transparent 0),
         radial-gradient(circle 4px at 4px center, var(--primary) 100%, transparent 0);
       background-size: 8px 8px;
       background-repeat: no-repeat;
