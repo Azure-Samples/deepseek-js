@@ -254,7 +254,7 @@ module aiServices 'br/public:avm/res/cognitive-services/account:0.9.2' = {
         }
       }
     ]
-    disableLocalAuth: false
+    disableLocalAuth: true
     roleAssignments: [
       {
         principalId: principalId
