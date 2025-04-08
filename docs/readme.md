@@ -82,6 +82,85 @@ The deployment process will take a few minutes. Once it's done, you'll see the U
 
 You can now open the web app in your browser and start chatting with the bot.
 
+## Key learnings
+
+To use Azure AI Services in your application, you can use the [Azure AI Inference SDK](https://www.npmjs.com/package/@azure-rest/ai-inference) or the [OpenAI SDK](https://www.npmjs.com/package/openai).
+
+Both of these SDKs supports [Managed Identity](https://learn.microsoft.com/azure/active-directory/managed-identities-azure-resources/overview) authentication, which allows you to authenticate without using any secrets. This is a great way to secure your application and avoid hardcoding secrets in your code.
+
+### Using Azure AI Inference SDK
+
+```ts
+import { DefaultAzureCredential } from '@azure/identity';
+import ModelClient, { isUnexpected } from '@azure-rest/ai-inference';
+
+const credentialScopes = {
+  credentials: { scopes: ['https://cognitiveservices.azure.com/.default'] }
+};
+const endpoint = 'https://<YOUR_INSTANCE_NAME>.services.ai.azure.com/models';
+
+// Use the current user identity to authenticate.
+// No secrets needed, it uses `az login` or `azd auth login` locally,
+// and managed identity when deployed on Azure.
+const credentials = new DefaultAzureCredential();
+const client = ModelClient(endpoint, credentials, credentialScopes);
+
+const response = await client.path('/chat/completions').post({
+  body: {
+    messages: [{ role: 'user', content: 'Say hello' }],
+    model: 'DeepSeek-R1',
+  },
+});
+
+console.log(response.body.choices[0].message.content);
+```
+
+### Using OpenAI SDK
+
+> **Note**: Currently, only the v5 beta version of the OpenAI SDK supports managed identity authentication with Azure AI Service. You can install it using the following command: `npm install openai@beta`.
+
+```ts
+import { DefaultAzureCredential, getBearerTokenProvider } from '@azure/identity';
+import OpenAI from 'openai';
+
+const scope = 'https://cognitiveservices.azure.com/.default';
+const endpoint = 'https://<YOUR_INSTANCE_NAME>.services.ai.azure.com/models';
+
+// Use the current user identity to authenticate.
+// No secrets needed, it uses `az login` or `azd auth login` locally,
+// and managed identity when deployed on Azure.
+const credentials = new DefaultAzureCredential();
+const azureADTokenProvider = getBearerTokenProvider(credentials, scope);
+const client = new OpenAI({
+  baseURL: endpoint,
+  fetch: async (url, init = {}) => {
+    const token = await azureADTokenProvider();
+    const headers = new Headers(init.headers);
+    headers.set('Authorization', `Bearer ${token}`);
+    return fetch(url, { ...init, headers });
+  },
+  defaultQuery: { 'api-version': '2024-05-01-preview' },
+  apiKey: '_not_used_',
+});
+
+const response = await client.chat.completions.create({
+  messages: [{ role: 'user', content: 'Say hello' }],
+  model: 'DeepSeek-R1',
+});
+
+console.log(response.choices[0].message.content);
+```
+
+### Parsing DeepSeek-R1 responses
+
+The DeepSeek-R1 model generates responses in a specific format. The response contains a `<think>` tag that the model uses for its reasoning, and the final answer is provided after the `</think>` tag. You can use the following code to extract the reasoning and the final answer from the response:
+
+```ts
+const [thoughts, content] = message.content
+  .match(/<think>(.*?)<\/think>(.*)/s)?
+  .slice(1) ?? [];
+```
+
 ## Clean up
 
 To clean up all the Azure resources created by this sample:
