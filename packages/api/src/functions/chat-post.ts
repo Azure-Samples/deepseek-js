@@ -1,6 +1,5 @@
 import process from 'node:process';
 import { Readable } from 'node:stream';
-import { type IncomingMessage } from 'node:http';
 import { DefaultAzureCredential } from '@azure/identity';
 import { type HttpRequest, type InvocationContext, type HttpResponseInit, app } from '@azure/functions';
 import {
@@ -9,7 +8,7 @@ import {
   type AIChatCompletion,
 } from '@microsoft/ai-chat-protocol';
 import ModelClient, { isUnexpected } from '@azure-rest/ai-inference';
-import { createSseStream } from '@azure/core-sse';
+import { createSseStream, NodeJSReadableStream } from '@azure/core-sse';
 import 'dotenv/config';
 
 const credentialScopes = { credentials: { scopes: ['https://cognitiveservices.azure.com/.default'] } };
@@ -71,7 +70,7 @@ export async function postChat(
         })
         .asNodeStream();
 
-      const stream = responseStream.body as IncomingMessage;
+      const stream = responseStream.body;
       if (!stream) {
         throw new Error('The response stream is undefined');
       }
@@ -122,7 +121,7 @@ export async function postChat(
 }
 
 // Transform the SSE stream into a JSON stream
-async function* createJsonStream(stream: IncomingMessage) {
+async function* createJsonStream(stream: NodeJSReadableStream) {
   const events = createSseStream(stream);
 
   for await (const event of events) {
