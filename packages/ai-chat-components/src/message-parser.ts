@@ -26,20 +26,11 @@ export function parseMessageIntoHtml(
     };
   }
 
-  let thoughts = '';
   const citations: string[] = [];
   const followupQuestions: string[] = [];
 
-  // Extract any thoughts that might be in the message, between <think> tags
-  let text = message.content
-    .replaceAll(/<think>(.*?)(<\/think>|$)/gs, (_match, content) => {
-      thoughts = content;
-      return '';
-    })
-    .trim();
-
   // Extract any follow-up questions that might be in the message
-  text = text
+  let text = message.content
     .replaceAll(/<<([^>]+)>>/g, (_match, content: string) => {
       followupQuestions.push(content);
       return '';
@@ -73,7 +64,7 @@ export function parseMessageIntoHtml(
   return {
     html: result,
     citations,
-    thoughts: html`${thoughts}`,
+    thoughts: html`${message.context?.['reasoning'] ?? ''}`,
     followupQuestions,
     role: message.role,
     context: message.context,
