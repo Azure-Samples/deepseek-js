@@ -77,7 +77,7 @@ var tags = { 'azd-env-name': environmentName }
 var principalType = isContinuousIntegration ? 'ServicePrincipal' : 'User'
 var apiResourceName = '${abbrs.webSitesFunctions}api-${resourceToken}'
 var storageAccountName = '${abbrs.storageStorageAccounts}${resourceToken}'
-var aiServicesUrl = 'https://${aiServices.outputs.name}.services.ai.azure.com/models'
+var aiServicesUrl = 'https://${aiServices.outputs.name}.services.ai.azure.com'
 
 // ---------------------------------------------------------------------------
 // Resources
