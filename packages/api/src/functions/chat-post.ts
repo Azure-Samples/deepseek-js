@@ -92,7 +92,7 @@ export async function postChat(
           content: response.choices[0].message.content,
           role: 'assistant',
           context: {
-            // reasoning_content property is not yet part of the type definition
+            // Reasoning_content property is not yet part of the type definition
             reasoning: (response.choices[0].message as any).reasoning_content ?? '',
           },
         },
@@ -112,14 +112,14 @@ export async function postChat(
 // Transform the response chunks into a JSON stream
 async function* createJsonStream(chunks: AsyncIterable<ChatCompletionChunk>) {
   for await (const chunk of chunks) {
-    if (!chunk || !chunk.choices[0]) continue;
+    if (!chunk?.choices[0]) continue;
 
     const responseChunk: AIChatCompletionDelta = {
       delta: {
         content: chunk.choices[0]?.delta.content ?? '',
         role: 'assistant',
         context: {
-          // reasoning_content property is not yet part of the type definition
+          // Reasoning_content property is not yet part of the type definition
           reasoning: (chunk.choices[0]?.delta as any).reasoning_content ?? '',
         },
       },
