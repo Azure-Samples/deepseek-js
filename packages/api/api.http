@@ -30,29 +30,3 @@ Content-Type: application/json
     }
   ]
 }
-
-### Chat with the bot (OpenAI SDK version)
-POST {{api_host}}/api/openai/chat
-Content-Type: application/json
-
-{
-  "messages": [
-    {
-      "content": "How to bake cookies?",
-      "role": "user"
-    }
-  ]
-}
-
-### Chat with the bot with streaming (OpenAI SDK version)
-POST {{api_host}}/api/openai/chat/stream
-Content-Type: application/json
-
-{
-  "messages": [
-    {
-      "content": "How to bake cookies?",
-      "role": "user"
-    }
-  ]
-}

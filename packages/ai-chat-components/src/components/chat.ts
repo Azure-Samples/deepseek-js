@@ -132,17 +132,18 @@ export class ChatComponent extends LitElement {
     try {
       const response = await getCompletion({ ...this.options, messages: this.messages });
       if (this.options.stream) {
-        this.isStreaming = true;
         const chunks = response as AsyncGenerator<AIChatCompletionDelta>;
         const { messages } = this;
         const message: AIChatMessage = {
           content: '',
           role: 'assistant',
+          context: { reasoning: '' },
         };
         for await (const chunk of chunks) {
-          if (chunk.delta.content) {
+          if (chunk.delta.content || chunk.delta.context?.['reasoning']) {
             this.isStreaming = true;
-            message.content += chunk.delta.content;
+            message.content += chunk.delta.content ?? '';
+            message.context!['reasoning'] += chunk.delta.context?.['reasoning'] ?? '';
             this.messages = [...messages, message];
             this.scrollToLastMessage();
           }
