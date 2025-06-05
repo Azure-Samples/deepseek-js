@@ -88,7 +88,7 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   tags: tags
 }
 
-module webapp 'br/public:avm/res/web/static-site:0.7.0' = {
+module webapp 'br/public:avm/res/web/static-site:0.9.0' = {
   name: 'webapp'
   scope: resourceGroup
   params: {
@@ -98,7 +98,7 @@ module webapp 'br/public:avm/res/web/static-site:0.7.0' = {
     sku: 'Standard'
     linkedBackend: {
       resourceId: function.outputs.resourceId
-      region: location
+      location: location
     }
   }
 }
